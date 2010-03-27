@@ -58,7 +58,8 @@ def get_config():
     required_keys = ["user", "token"]
     config = {}
     for key in required_keys:
-        command = "git config --global github.%s" % key
+        command = "head" if key is "user" else "tail"
+        command = "%s -n1 ~/.githubconfig" % command
         stdout, stderr = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, 
             stderr=PIPE).communicate()
         if stderr:

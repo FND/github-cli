@@ -185,7 +185,7 @@ class Commands(object):
                 printer.write() # new line between states
         printer.close()
         
-    def show(self, number=None, webbrowser=False, **kwargs):
+    def show(self, number=None, verbose=False, webbrowser=False, **kwargs):
         validate_number(number, example="%s show 1" % get_prog())
         if webbrowser:
             issue_url_template = "http://github.com/%s/%s/issues/%s/find"
@@ -197,27 +197,30 @@ class Commands(object):
             else:
                 sys.exit(0)
 
-        printer = Pager()
         issue = self.__get_issue(number)
-        lines = format_issue(issue, verbose=True)
-        lines.insert(0, " ") # insert empty first line -- XX: undesirable!? -- TODO: DRY; cf. pprint_issue
-        printer.write("\n".join(lines))
-
-        comments = self.__submit('comments', number)
-        comments = get_key(comments, 'comments')
-        header = "%s comments on issue #%s" % (len(comments), number)
-        lines = [header]
-        if len(header) > 79: # TODO: DRY; cf. format_issue
-            lines.append("-" * 79)
+        if not verbose:
+            pprint_issue(issue)
         else:
-            lines.append("-" * len(header))
-        lines.append("")
-        for comment in comments:
-            lines.extend(format_comment(comment))
-            lines.append("")
-        printer.write("\n".join(lines))
+            printer = Pager()
+            lines = format_issue(issue, verbose=True)
+            lines.insert(0, " ") # insert empty first line -- XX: undesirable!? -- TODO: DRY; cf. pprint_issue
+            printer.write("\n".join(lines))
 
-        printer.close() # XXX: wrap in try..finally to ensure terminal isn't confused?
+            comments = self.__submit('comments', number)
+            comments = get_key(comments, 'comments')
+            header = "%s comments on issue #%s" % (len(comments), number)
+            lines = [header]
+            if len(header) > 79: # TODO: DRY; cf. format_issue
+                lines.append("-" * 79)
+            else:
+                lines.append("-" * len(header))
+            lines.append("")
+            for comment in comments:
+                lines.extend(format_comment(comment))
+                lines.append("")
+            printer.write("\n".join(lines))
+
+            printer.close() # XXX: wrap in try..finally to ensure terminal isn't confused?
         
     def open(self, **kwargs):
         post_data = create_edit_issue()
@@ -307,6 +310,7 @@ Examples:
 %prog [-s o|c] -w                     show issues' GitHub page in web browser 
                                     (default: open)
 %prog show <nr>                       show issue <nr>
+%prog show <nr> -v                    same as above, but with comments
 %prog <nr>                            same as: %prog show <nr>
 %prog <nr> -w                         show issue <nr>'s GitHub page in web 
                                     browser

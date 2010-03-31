@@ -43,15 +43,21 @@ def format_issue(issue, verbose=True):
         output.append(" ")
     return output
 
+def format_comment(comment):
+    timestamp = comment.get("updated_at", comment["created_at"]) # XXX: fallback unnecessary?
+    title = "comment by %s (%s)" % (comment["user"], timestamp)
+    output = [title]
+    if len(title) > 79: # TODO: DRY; cf. format_issue
+        output.append("-" * 79)
+    else:
+        output.append("-" * len(title))
+    output.append(comment["body"])
+    return output
+
 def pprint_issue(issue, verbose=True):
     lines = format_issue(issue, verbose)
     lines.insert(0, " ") # insert empty first line
     print "\n".join(lines)
-    
-def pprint_comment(comment, verbose=True):
-    timestamp = comment.get("updated_at", comment["created_at"]) # XXX: fallback unnecessary?
-    print "comment by %s (%s)" % (comment["user"], timestamp)
-    print comment["body"]
     
 def handle_error(result):
     output = []
@@ -190,11 +196,28 @@ class Commands(object):
                 print "error: opening page in web browser failed"
             else:
                 sys.exit(0)
+
+        printer = Pager()
         issue = self.__get_issue(number)
+        lines = format_issue(issue, verbose=True)
+        lines.insert(0, " ") # insert empty first line -- XX: undesirable!? -- TODO: DRY; cf. pprint_issue
+        printer.write("\n".join(lines))
+
         comments = self.__submit('comments', number)
-        pprint_issue(issue)
-        for comment in get_key(comments, 'comments'):
-            pprint_comment(comment)
+        comments = get_key(comments, 'comments')
+        header = "%s comments on issue #%s" % (len(comments), number)
+        lines = [header]
+        if len(header) > 79: # TODO: DRY; cf. format_issue
+            lines.append("-" * 79)
+        else:
+            lines.append("-" * len(header))
+        lines.append("")
+        for comment in comments:
+            lines.extend(format_comment(comment))
+            lines.append("")
+        printer.write("\n".join(lines))
+
+        printer.close() # XXX: wrap in try..finally to ensure terminal isn't confused?
         
     def open(self, **kwargs):
         post_data = create_edit_issue()

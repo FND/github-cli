@@ -48,6 +48,11 @@ def pprint_issue(issue, verbose=True):
     lines.insert(0, " ") # insert empty first line
     print "\n".join(lines)
     
+def pprint_comment(comment, verbose=True):
+    timestamp = comment.get("updated_at", comment["created_at"]) # XXX: fallback unnecessary?
+    print "comment by %s (%s)" % (comment["user"], timestamp)
+    print comment["body"]
+    
 def handle_error(result):
     output = []
     for msg in result['error']:
@@ -186,7 +191,10 @@ class Commands(object):
             else:
                 sys.exit(0)
         issue = self.__get_issue(number)
+        comments = self.__submit('comments', number)
         pprint_issue(issue)
+        for comment in get_key(comments, 'comments'):
+            pprint_comment(comment)
         
     def open(self, **kwargs):
         post_data = create_edit_issue()

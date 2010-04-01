@@ -8,7 +8,7 @@ try:
     long_description = open(os.path.join(cur_dir, 'README.rst')).read()
 except:
     long_description = description
-    
+
 sys.path.insert(0, os.path.join(cur_dir, 'src')) # needed for importing github.version
 from github.version import get_version
 
